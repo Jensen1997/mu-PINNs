@@ -1,0 +1,68 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{    
+    INLET
+    {
+        type            codedFixedValue;
+        value           uniform (1 0 0);
+
+        name            linearVelocity;
+        code
+        #{
+            const vectorField& Cf = patch().Cf();   //center of the patch
+            vectorField& field = *this;             //the target velocity field
+
+            const scalar U_max = 1;
+            const scalar ymax = 1;                 //radius of the hot coflow
+
+            forAll(Cf, faceI)
+            {
+                const scalar y_inb = Cf[faceI][1];
+                field[faceI] = vector(4*U_max*y_inb*(ymax-y_inb)/(ymax*ymax),0,0);
+            };
+
+        #};
+    }
+
+    OUTLET
+    {
+        type            zeroGradient;
+    }
+
+    CIR
+    {
+        type            noSlip;
+    }
+
+    "(FRONT|BACK)"
+    {
+        type            empty;
+    }
+
+    "(UP|DOWN)"
+    {
+        type            noSlip;
+    }
+}
+
+
+// ************************************************************************* //
